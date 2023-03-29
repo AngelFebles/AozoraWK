@@ -1,5 +1,6 @@
-import aozoracli # From here: https://github.com/aozorahack/aozora-cli/
-import aozoracli.client
+#This code reads japanese text from text.txt and determines the minimum Wanikani level needed 
+#to read 80%, 85%, 90%, and 95% of the text
+
 import json
 import re
 import numpy as np
@@ -10,21 +11,21 @@ def get_kanji():
     lkeys = range(1,61)
     level_kanji_map = dict(zip(lkeys, ([] for _ in lkeys)))
 
-    with open('/Users/Emily/Desktop/Aozora/0120.json') as f:
+    with open('kanji_levels/0120.json', encoding="utf-8") as f:
         data = json.loads(f.read())
     for i in data["data"]:
         kanji_level_map[i['data']['characters']] = i['data']['level']
         level_kanji_map[int(i['data']['level'])].append(i['data']['characters'])
     f.close()
 
-    with open('/Users/Emily/Desktop/Aozora/2140.json') as f:
+    with open('kanji_levels/2140.json', encoding="utf-8") as f:
         data = json.loads(f.read())
     for i in data["data"]:
         kanji_level_map[i['data']['characters']] = i['data']['level']
         level_kanji_map[int(i['data']['level'])].append(i['data']['characters'])
     f.close()
 
-    with open('/Users/Emily/Desktop/Aozora/4160.json') as f:
+    with open('kanji_levels/4160.json', encoding="utf-8") as f:
         data = json.loads(f.read())
     for i in data["data"]:
         kanji_level_map[i['data']['characters']] = i['data']['level']
@@ -33,21 +34,16 @@ def get_kanji():
 
     return kanji_level_map, level_kanji_map
 
-def get_book_id_list():
-    '''not actually using this'''
-    book_map = {}
-    full_list = aozoracli.client.get_books().json() # only gives you 100, deal with this
-    for i in full_list:
-        book_map[i["book_id"]] = {'title':i["title"], 'authors':i["authors"]}
-    return book_map
 
-def get_level(book_id, kanji_level_map):
+def get_level(book, kanji_level_map):
     '''Gets all of the kanji from the text and finds the lowest level needed to be able to
     read [pct]% of the unique kanji.'''
-    bk_text = aozoracli.client.get_content(id=book_id).text
-    bk_text = re.findall(r'[㐀-䶵一-鿋豈-頻]',bk_text)
+
+    bk_text = re.findall(r'[㐀-䶵一-鿋豈-頻]',book)
+
     bk_text = set(bk_text)
     kanji_levels = []
+
     for item in bk_text:
         if item in kanji_level_map.keys():
             kanji_levels.append(kanji_level_map[item])
@@ -59,37 +55,46 @@ def get_level(book_id, kanji_level_map):
         return [int(np.percentile(kanji_levels, 80)),int(np.percentile(kanji_levels, 85)),
         int(np.percentile(kanji_levels, 90)),int(np.percentile(kanji_levels, 95))]
 
-def format_output(bk, lvl, title, authors):
+
+def format_output(lvl):
     '''Formats output for printing'''
-    if authors != '':
-        main_author = authors[0]['last_name']+', '+authors[0]['first_name']
-    else:
-        main_author = ''
+   
     for i in range(len(lvl)):
         if lvl[i]==61:
             lvl[i] = "X"
         else:
             lvl[i] = str(lvl[i])
+
     lvl = '\t'.join(lvl)
-    return '%s\t%s\t%s\t%s\n' % (lvl, title, main_author, bk)
+    return '%s\n' % (lvl)
+
+def print_output(lvl):
+    print('-------------------------------------')
+    print('WK level for 80% - '+ lvl[0])
+    print('WK level for 85% - '+ lvl[1])
+    print('WK level for 90% - '+ lvl[2])
+    print('WK level for 95% - '+ lvl[3])
+    print('-------------------------------------')
+
 
 if __name__=="__main__":
     kanji_level_map, level_kanji_map = get_kanji()
-    f = open('/Users/Emily/Desktop/Aozora/book_id_list_sorted.txt','r') # from https://www.aozora.gr.jp/index_pages/list_person_all_extended.zip
-    w = open('/Users/Emily/Desktop/Aozora/output.tsv','w')
-    w.write('WK Level 80\tWK Level 85\tWK Level 90\tWK Level 95\tTitle\tMain Author\tAB Book ID\n')
-    bk = f.readline().strip()
-    count = 0
-    #get_level(59898, kanji_level_map, 90)
-    while bk:
-    #while count < 500:
-        count += 1
-        lvl = get_level(int(bk), kanji_level_map)
+
+    w = open('output.tsv','w')
+    w.write('WK 80%\tWK 85%\tWK 90%\tWK 95%\n')
+
+
+    #text.txt is the file containing the text to be analyzed
+    #To try different text, either change this file's contents or change the path to a different one.
+
+    with open("text.txt", encoding="utf-8") as f:
+        a = f.read()
+        lvl = get_level(a, kanji_level_map)
+
         if (lvl != []) and (min(lvl) != 61):
-            bookinfo = aozoracli.client.get_books(id=int(bk)).json()
-            booktitle = bookinfo['title']
-            bookauthors = bookinfo.get('authors','')
-            w.write(format_output(bk, lvl, booktitle, bookauthors))
-        if count%50 == 0:
-            print("Currently on book #%d..." % count)
-        bk = f.readline().strip()
+
+            w.write(format_output(lvl))
+        
+        print_output(lvl)
+
+
