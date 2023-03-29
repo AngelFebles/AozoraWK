@@ -52,8 +52,9 @@ def get_level(book, kanji_level_map):
     if kanji_levels == []:
         return []
     else:
-        return [int(np.percentile(kanji_levels, 80)),int(np.percentile(kanji_levels, 85)),
-        int(np.percentile(kanji_levels, 90)),int(np.percentile(kanji_levels, 95))]
+        
+        return [int(np.percentile(kanji_levels, 50)), int(np.percentile(kanji_levels, 75)),int(np.percentile(kanji_levels, 80)),int(np.percentile(kanji_levels, 85)),
+        int(np.percentile(kanji_levels, 90)),int(np.percentile(kanji_levels, 95)),int(np.percentile(kanji_levels, 99))]
 
 
 def format_output(lvl):
@@ -70,10 +71,13 @@ def format_output(lvl):
 
 def print_output(lvl):
     print('-------------------------------------')
-    print('WK level for 80% - '+ lvl[0])
-    print('WK level for 85% - '+ lvl[1])
-    print('WK level for 90% - '+ lvl[2])
-    print('WK level for 95% - '+ lvl[3])
+    print('WK level for 50% - '+ lvl[0])
+    print('WK level for 75% - '+ lvl[1])
+    print('WK level for 80% - '+ lvl[2])
+    print('WK level for 85% - '+ lvl[3])
+    print('WK level for 90% - '+ lvl[4])
+    print('WK level for 95% - '+ lvl[5])
+    print('WK level for 99% - '+ lvl[6])
     print('-------------------------------------')
 
 
@@ -81,7 +85,7 @@ if __name__=="__main__":
     kanji_level_map, level_kanji_map = get_kanji()
 
     w = open('output.tsv','w')
-    w.write('WK 80%\tWK 85%\tWK 90%\tWK 95%\n')
+    w.write('WK50% \tWK75% \tWK 80%\tWK 85%\tWK 90%\tWK 95%\t WK 99%\n')
 
 
     #text.txt is the file containing the text to be analyzed
